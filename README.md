@@ -1,10 +1,9 @@
-# SpaghettiInstaller
-A little installer for UndertaleTogether...
+# MultiModInstaller
+A little installer for any Undertale/Deltarune Mod
 
-Technically can be adapted to any Undertale mod which is distributed as an xdelta patch...
+Base of https://github.com/nkrapivin/SpaghettiInstaller
 
-(yes I herby sincerely apologize for the piracy check)
+## Credits
 
-installer coded by: nik the neko
-
-undertale together by: depa the bau
+- nik the neko - SpaghettiInstaller
+- Toby Fox - Undertale/DeltaruneMod
