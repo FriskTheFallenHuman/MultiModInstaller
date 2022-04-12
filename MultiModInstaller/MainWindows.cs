@@ -1,30 +1,37 @@
-﻿using Microsoft.Win32; // for Steam detection ONLY!
+﻿using Steamworks;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Forms;
-using static SpaghettiInstaller.localizationClass; // for Localization.
+
+using static MultiModInstaller.localizationClass; // for Localization.
 
 /*
- * Hewwo!
- * This is basically the core of "SpaghettiInstaller"
- * Have fun!
+ * This is the core of MultiModInstaller
+ * Some things had been change in comparisong to SpaghettiInstaller
+ * For example we now use Facepunch's SteamWorks for Piracy Check
+ * And we now include xdelta3 has a c# binding
  * 
- * Made by nik the neko originally for Depa the dog.
+ * Yet, there's not a linux/mac port and also atm no x86 bits support
+ * 
+ * SpaghettiInstaller Made by nik the neko originally for Depa the dog.
  */
-
-namespace SpaghettiInstaller
+namespace MultiModInstaller
 {
-    public partial class mainForm : Form
+    public partial class MainWindows : Form
     {
         public int currentPage = 0; // greeting page is 0.
-        public string gamePath = ""; // path for Undertale.
-        public string steamPath = ""; // this will be filled with Steam's installation path (and later, UNDERTALE's path)
+
+        // Steam Manipulation
+        public string gamePath = ""; // path for Undertale/Deltarune.
+        public string steamPath = ""; // this will be filled with Steam's installation path (and later, UNDERTALE's/DELTARUNE's path)
+        public uint steamAppID = 391540; // Change This.
         public bool haveSteam = false;
         public bool gameNotInstalled = false; // a small variable used to check piracy stuff...
-        public bool userChoseSteamCopy = false; // if user decided to use Steam copy of UNDERTALE.
+        public bool userChoseSteamCopy = false; // if user decided to use Steam copy of UNDERTALE/DELTARUNE.
+
         public const string dataFileName = "data.win"; // game.droid/game.unx for other platforms.
 
         public const string dataWantedSHA256 = "B718F8223A5BB31979FFEED10BE6140C857B882FC0D0462B89D6287AE38C81C7"; // Undertale v1.08 Steam(!)
@@ -33,11 +40,12 @@ namespace SpaghettiInstaller
         public static string tempFolder = Path.GetTempPath();
         public static string patcherPath = AppDomain.CurrentDomain.BaseDirectory; // directory where patcher is located.
 
+        // Optional Files
         public const bool usesOptionalFiles = true; // use "Optional Files" or not?
-        public static string optionalFilesPath = patcherPath + "Optional Files" + Path.DirectorySeparatorChar; // Optional Files directory.
-        public static string patchFile = patcherPath + "UndertaleTogether.xdelta"; // pleaz change.
+        public static string optionalFilesPath = patcherPath + "extras" + Path.DirectorySeparatorChar; // Optional Files directory.
+        public static string patchFile = patcherPath + "patch.xdelta"; // Change This.
 
-        public mainForm()
+        public MainWindows()
         {
             InitializeComponent();
             sanityCheck();
@@ -223,8 +231,6 @@ namespace SpaghettiInstaller
             try { File.Delete(patchFile); } catch { }
             // we "try" to remove the patch file without crashing.
 
-            Clipboard.SetText("https://bit.ly/33LVPOT");
-
             MessageBox.Show(
                 getLocalizationString("bauPiracyMsg"),
                 getLocalizationString("errorTitle"),
@@ -236,48 +242,36 @@ namespace SpaghettiInstaller
 
         private void steamCheck()
         {
-            var ret2 = 0;
             var ret = string.Empty;
             var result = false;
+
             try
             {
-                ret = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "SteamPath", string.Empty).ToString();
-                result = int.TryParse(Registry.GetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam\Apps\391540", "Installed", 0).ToString(), out ret2);
-                if (!result) throw new Exception("error when parsing stuff.");
+                SteamClient.Init(steamAppID, true); // Change the ApID  if you want
+
+                result = SteamApps.IsSubscribed;
+
+                if (!result) // Maybe they had the game has Family shared?
+                    result = SteamApps.IsSubscribedFromFamilySharing;
+
+                ret = SteamApps.AppInstallDir(steamAppID);
             }
             catch
             {
+                // Something went wrong! Steam is closed?
                 haveSteam = false;
                 return;
             }
-            
-            if (ret == string.Empty)
+
+            if (File.Exists(ret + dataFileName)) // found UNDERTALE/DELTARUNE from the 1st attempt!
             {
-                haveSteam = false; // nope, no Steam in the first place.
+                haveSteam = true;
+                steamPath = ret;
                 return;
             }
-            else
+            else // UNDERTALE/DELTARUNE is not installed, or it doesn't exist in Steam's library.
             {
-                ret += @"/steamapps/common/Undertale/";
-                if (File.Exists(ret + dataFileName)) // found UNDERTALE from the 1st attempt!
-                {
-                    haveSteam = true;
-                    steamPath = ret;
-                    return;
-                }
-                else // hmm... perhaps an external installation folder?
-                {
-                    if (ret2 > 0)
-                    {
-                        haveSteam = true;
-                        steamPath = "$ASK_FOR_ANOTHER_FOLDER!";
-                        return;
-                    }
-                    else // UNDERTALE is not installed, or it doesn't exist in Steam's library.
-                    {
-                        gameNotInstalled = true;
-                    }
-                }
+                gameNotInstalled = true;
             }
         }
 
@@ -403,7 +397,7 @@ namespace SpaghettiInstaller
 
                     if (supposedChecksum == dataWantedSHA256 && (!haveSteam || (haveSteam && gameNotInstalled)))
                     {
-                        //excuse me, you chose a Steam(!) copy of undertale, and you don't have Steam?
+                        //excuse me, you chose a Steam(!) copy of UNDERTALE/DELTARUNE, and you don't have Steam?
                         //let PiracyCheck handle the rest
                         PiracyCheck();
                     }
@@ -414,11 +408,11 @@ namespace SpaghettiInstaller
 
                     ToggleButtons(false);
 
-                    if (!backedup) BackupGame(dataFilePath);
+                    if (!backedup) 
+                        BackupGame(dataFilePath);
 
                     if (supposedChecksum == dataWantedSHA256) // all is fine.
                     {
-
                         // xdelta3.exe written okay, can continue...
                         var xdeltaArgs = @"-d -s """ + dataFilePath + @""" """ + patchFile + @""" """ + dataFilePath + @".new"""; // only use absolute paths.
                         var xdeltaprocinfo = new ProcessStartInfo();

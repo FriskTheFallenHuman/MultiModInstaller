@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SpaghettiInstaller")]
-[assembly: AssemblyDescription("meow miao woof bau")]
+[assembly: AssemblyTitle("MultiModInstaller")]
+[assembly: AssemblyDescription("MultiPurposes UNDERTALE/DELTARUNE mod installer.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("italian pizza ltd.")]
-[assembly: AssemblyProduct("SpaghettiInstaller")]
+[assembly: AssemblyCompany("Your Team Name Here.")]
+[assembly: AssemblyProduct("MultiModInstaller")]
 [assembly: AssemblyCopyright("none")]
 [assembly: AssemblyTrademark("none")]
 [assembly: AssemblyCulture("")]

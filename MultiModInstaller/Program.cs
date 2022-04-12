@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Steamworks;
+using System;
 using System.Windows.Forms;
 
-namespace SpaghettiInstaller
+namespace MultiModInstaller
 {
     static class Program
     {
@@ -15,7 +14,12 @@ namespace SpaghettiInstaller
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new mainForm());
+            Application.Run(new MainWindows());
+        }
+
+        static void OnProcessExit(object sender, EventArgs e)
+        {
+            SteamClient.Shutdown();
         }
     }
 }
